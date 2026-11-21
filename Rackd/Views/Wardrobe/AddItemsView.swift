@@ -158,7 +158,10 @@ private struct DraftRow: View {
                         .toggleStyle(.switch)
                         .controlSize(.mini)
                 } else {
-                    Label("Couldn't find the item's edges – keeping the full photo.", systemImage: "exclamationmark.triangle")
+                    Label(
+                        draft.processed.backgroundRemovalNote ?? "Couldn't find the item's edges – keeping the full photo.",
+                        systemImage: "exclamationmark.triangle"
+                    )
                         .font(.caption)
                         .foregroundStyle(.orange)
                 }

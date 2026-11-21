@@ -6,6 +6,8 @@ struct ProcessedItem: Identifiable {
     var original: UIImage
     var cutout: UIImage
     var backgroundRemoved: Bool
+    /// Why background removal failed, if it did.
+    var backgroundRemovalNote: String?
     var category: ClothingCategory
     var categoryConfidence: Double
     var colorName: String
@@ -23,9 +25,12 @@ enum ItemProcessor {
 
             var cutout = original
             var removed = false
-            if let lifted = try? BackgroundRemover.removeBackground(from: original) {
-                cutout = lifted
+            var note: String?
+            do {
+                cutout = try BackgroundRemover.removeBackground(from: original).image
                 removed = true
+            } catch {
+                note = error.localizedDescription
             }
 
             let classification = ClothingClassifier.classify(removed ? cutout : original)
@@ -38,6 +43,7 @@ enum ItemProcessor {
                 original: original,
                 cutout: cutout,
                 backgroundRemoved: removed,
+                backgroundRemovalNote: note,
                 category: classification.category,
                 categoryConfidence: classification.confidence,
                 colorName: color?.name ?? "",
@@ -48,9 +54,9 @@ enum ItemProcessor {
     }
 
     /// Re-runs background removal on a stored original.
-    static func removeBackground(_ image: UIImage) async -> UIImage? {
+    static func removeBackground(_ image: UIImage) async -> Result<UIImage, Error> {
         await Task.detached(priority: .userInitiated) {
-            try? BackgroundRemover.removeBackground(from: image)
+            Result { try BackgroundRemover.removeBackground(from: image).image }
         }.value
     }
 }
@@ -66,6 +72,9 @@ extension UIImage {
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
         format.opaque = false
+        // Force 8-bit sRGB: on wide-colour iPhones the default can be 16-bit
+        // float, which Vision's subject lifting may reject.
+        format.preferredRange = .standard
         return UIGraphicsImageRenderer(size: target, format: format).image { _ in
             draw(in: CGRect(origin: .zero, size: target))
         }

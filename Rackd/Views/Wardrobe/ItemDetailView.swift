@@ -9,6 +9,7 @@ struct ItemDetailView: View {
     @State private var showDeleteConfirmation = false
     @State private var isReprocessing = false
     @State private var reprocessFailed = false
+    @State private var reprocessError = ""
 
     var body: some View {
         Form {
@@ -126,10 +127,10 @@ struct ItemDetailView: View {
         } message: {
             Text("It will also be removed from any outfits.")
         }
-        .alert("Couldn't find the item", isPresented: $reprocessFailed) {
+        .alert("Background removal failed", isPresented: $reprocessFailed) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Try retaking the photo on a plain, contrasting background. Background removal needs a real device (not the Simulator).")
+            Text(reprocessError)
         }
     }
 
@@ -137,9 +138,11 @@ struct ItemDetailView: View {
         guard let data = item.originalImageData, let original = UIImage(data: data) else { return }
         isReprocessing = true
         defer { isReprocessing = false }
-        if let cutout = await ItemProcessor.removeBackground(original) {
+        switch await ItemProcessor.removeBackground(original) {
+        case .success(let cutout):
             item.replaceImage(with: cutout.pngDataForStorage())
-        } else {
+        case .failure(let error):
+            reprocessError = error.localizedDescription
             reprocessFailed = true
         }
     }
