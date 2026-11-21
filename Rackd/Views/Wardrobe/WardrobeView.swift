@@ -6,6 +6,9 @@ import SwiftUI
 struct PendingImages: Identifiable {
     let id = UUID()
     let images: [UIImage]
+    /// Pre-filled from an online search.
+    var brand = ""
+    var typeHint = ""
 }
 
 struct WardrobeView: View {
@@ -21,6 +24,8 @@ struct WardrobeView: View {
     @State private var photoSelection: [PhotosPickerItem] = []
     @State private var isLoadingPhotos = false
     @State private var pending: PendingImages?
+    @State private var showOnlineSearch = false
+    @State private var onlinePick: OnlineSearchPick?
 
     private let columns = [GridItem(.adaptive(minimum: 104), spacing: 12)]
 
@@ -104,8 +109,16 @@ struct WardrobeView: View {
                 CameraPicker { capturedImage = $0 }
                     .ignoresSafeArea()
             }
+            .sheet(isPresented: $showOnlineSearch, onDismiss: {
+                if let onlinePick {
+                    pending = PendingImages(images: [onlinePick.image], brand: onlinePick.brand, typeHint: onlinePick.type)
+                    self.onlinePick = nil
+                }
+            }) {
+                OnlineItemSearchView { onlinePick = $0 }
+            }
             .sheet(item: $pending) { batch in
-                AddItemsView(images: batch.images)
+                AddItemsView(images: batch.images, brand: batch.brand, typeHint: batch.typeHint)
             }
         }
     }
@@ -124,6 +137,11 @@ struct WardrobeView: View {
             } label: {
                 Label("Choose from Library", systemImage: "photo.on.rectangle")
             }
+            Button {
+                showOnlineSearch = true
+            } label: {
+                Label("Find Online by Brand", systemImage: "magnifyingglass")
+            }
         } label: {
             Image(systemName: "plus")
         }
@@ -134,13 +152,15 @@ struct WardrobeView: View {
         ContentUnavailableView {
             Label("Your wardrobe is empty", systemImage: "hanger")
         } description: {
-            Text("Photograph your clothes. Rackd removes the background and sorts each item into a category for you.")
+            Text("Photograph your clothes, or find them online by brand. Rackd removes the background and sorts each item into a category for you.")
         } actions: {
             if CameraPicker.isAvailable {
                 Button("Take Photo") { showCamera = true }
                     .buttonStyle(.borderedProminent)
             }
             Button("Choose from Library") { showPhotoPicker = true }
+                .buttonStyle(.bordered)
+            Button("Find Online by Brand") { showOnlineSearch = true }
                 .buttonStyle(.bordered)
         }
     }

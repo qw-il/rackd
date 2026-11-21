@@ -6,12 +6,21 @@ struct ItemDraft: Identifiable {
     let id = UUID()
     var processed: ProcessedItem
     var name: String
+    var brand: String
     var category: ClothingCategory
     var useCutout: Bool
 
-    init(_ processed: ProcessedItem) {
+    init(_ processed: ProcessedItem, brand: String = "", typeHint: String = "") {
+        var processed = processed
+        // What the user typed beats what Vision guessed.
+        if let hinted = ClothingClassifier.category(fromText: typeHint) {
+            processed.category = hinted
+            processed.categoryConfidence = 1
+        }
         self.processed = processed
-        self.name = processed.suggestedName
+        self.brand = brand
+        let hint = typeHint.trimmingCharacters(in: .whitespaces)
+        self.name = hint.isEmpty ? processed.suggestedName : String(hint.prefix(1)).uppercased() + String(hint.dropFirst())
         self.category = processed.category
         self.useCutout = processed.backgroundRemoved
     }
@@ -25,6 +34,8 @@ struct ItemDraft: Identifiable {
 /// user confirm or tweak the results before saving.
 struct AddItemsView: View {
     let images: [UIImage]
+    var brand = ""
+    var typeHint = ""
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -79,7 +90,7 @@ struct AddItemsView: View {
         guard drafts.isEmpty else { return }
         for image in images {
             let processed = await ItemProcessor.process(image)
-            withAnimation { drafts.append(ItemDraft(processed)) }
+            withAnimation { drafts.append(ItemDraft(processed, brand: brand, typeHint: typeHint)) }
         }
         isProcessing = false
     }
@@ -94,6 +105,7 @@ struct AddItemsView: View {
                 colorName: draft.processed.colorName,
                 colorHex: draft.processed.colorHex
             )
+            item.brand = draft.brand.trimmingCharacters(in: .whitespaces)
             modelContext.insert(item)
         }
         dismiss()
@@ -115,6 +127,9 @@ private struct DraftRow: View {
             VStack(alignment: .leading, spacing: 6) {
                 TextField("Name", text: $draft.name)
                     .font(.headline)
+                TextField("Brand", text: $draft.brand)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
 
                 Picker("Category", selection: $draft.category) {
                     ForEach(ClothingCategory.allCases) { category in

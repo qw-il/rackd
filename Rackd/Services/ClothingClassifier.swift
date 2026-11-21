@@ -72,6 +72,18 @@ enum ClothingClassifier {
         )
     }
 
+    /// Category implied by free text such as "denim jacket" or "running shoes",
+    /// or `nil` if the text doesn't mention a known garment.
+    static func category(fromText text: String) -> ClothingCategory? {
+        let words = tokens(in: text)
+        var best: (category: ClothingCategory, hits: Int)?
+        for (category, categoryWords) in keywords {
+            let hits = words.intersection(categoryWords).count
+            if hits > (best?.hits ?? 0) { best = (category, hits) }
+        }
+        return best?.category
+    }
+
     /// When the classifier has nothing useful, guess from the subject's shape:
     /// wide & short → shoes, tall & narrow → bottoms/dress, otherwise a top.
     private static func fallback(for image: UIImage) -> ClassificationResult {

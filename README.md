@@ -6,6 +6,7 @@ A SwiftUI + SwiftData iPhone app for cataloguing your clothes, building outfits 
 
 ### Digital wardrobe
 - **Photograph clothes** with the camera, or import up to 20 at once from your photo library.
+- **Find it online by brand.** Type a brand and item type (e.g. "Levi's" + "501 jeans", plus an optional colour) and pick a clean product photo from web image results. The photo goes through the same background removal, and the brand, name and category are filled in from what you typed.
 - **Automatic background removal.** Vision's on-device subject lifting (`VNGenerateForegroundInstanceMaskRequest`, the same tech as "Lift Subject" in Photos) cuts each item out onto a transparent background.
 - **Automatic categorisation.** Vision's built-in image classifier (`VNClassifyImageRequest`) sorts each item into Tops, Bottoms, Dresses, Outerwear, Shoes, Bags or Accessories. If it finds no clothing labels, the app guesses from the item's shape.
 - **Colour detection.** The app finds the item's dominant colour (ignoring the removed background) and names it, e.g. "Navy" or "Olive".
@@ -35,6 +36,13 @@ A SwiftUI + SwiftData iPhone app for cataloguing your clothes, building outfits 
 
 > **Use a real device.** Vision's background removal needs the Neural Engine and doesn't run in the iOS Simulator. In the Simulator, items are saved with their full photo, and the review screen tells you background removal failed. Everything else works in the Simulator, and the camera option only appears on devices that have a camera.
 
+### Setting up online search
+Online search needs an image search API key, which you enter in the app (Wardrobe → + → Find Online by Brand → ⚙︎). The key is stored in the iOS Keychain.
+- **Brave Search API** (default): has a free plan. Get a key at https://brave.com/search/api/
+- **SerpApi** (Google Images results): has a free monthly allowance. Get a key at https://serpapi.com/
+
+Only the brand, type and colour you type are sent to the search service.
+
 ## Project layout
 ```
 Rackd/
@@ -46,8 +54,9 @@ Rackd/
     ColorAnalyzer.swift       Dominant colour + name
     ItemProcessor.swift       Full photo → item pipeline (runs off the main thread)
     ImageCache.swift          Decoded-image cache
+    ProductImageSearch.swift  Online product-photo search (Brave / SerpApi), Keychain key storage
   Views/
-    Wardrobe/                 Grid, add/review flow, item detail
+    Wardrobe/                 Grid, add/review flow, online search, item detail
     Outfits/                  Outfit list, builder canvas, outfit detail
     Calendar/                 Month grid, day detail, outfit picker
     Shared/                   Tiles, chips, camera picker, outfit renderer
