@@ -1,0 +1,13 @@
+{
+  "name": "Rackd",
+  "short_name": "Rackd",
+  "description": "Your personal wardrobe assistant",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f3f0",
+  "theme_color": "#cd5757",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
